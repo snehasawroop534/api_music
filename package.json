@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/snehasawroop534/api_music/issues"
   },
-  "homepage": "https://github.com/snehasawroop534/api_music#readme"
+  "homepage": "https://github.com/snehasawroop534/api_music#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }
