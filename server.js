@@ -3,7 +3,7 @@ const db = require("./db");
 const app = express();
 
 app.get("/api/user",async(request, response)=>{
-    const  result =await db.query("SELECT * FROM users")
+    const  result =await db.query("SELECT * FROM customer")
     response.status(200).json(result);
 
 });
