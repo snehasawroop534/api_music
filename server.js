@@ -2,8 +2,8 @@ const express = require("express");
 const db = require("./db");
 const app = express();
 
-app.get("/api/customer/auth",async(request, response)=>{
-    const  result =await db.query("SELECT * FROM customer")
+app.get("/api/project",async(request, response)=>{
+    const  result =await db.query("SELECT * FROM users")
     response.status(200).json(result);
 
 });
@@ -16,7 +16,7 @@ app.post("/api/user/register",(request, response)=>{
 });
 
 
-app.listen(4000, (error)=>{
+app.listen(4003, (error)=>{
     if(error) console.log("Error "+ error);
     console.log("Server is running on port 4000");
 })
