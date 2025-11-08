@@ -1,13 +1,16 @@
 const express = require("express");
+const db = require("/db");
 const app = express();
 
-app.get("/api/user",(request, response)=>{
-    response.status(200).json({name: "Sneha", email: "sneha@gmail.com", id: 1});
+app.get("/api/user",async(request, response)=>{
+    const  result =await db.query("SELECT * FROM users")
+    response.status(200).json(result);
 
 });
 
 
-app.post("/api/user",(request, response)=>{
+app.post("/api/user/register",(request, response)=>{
+
     response.status(200).json({name: "Sneha", email: "sneha@gmail.com", id: 1});
 
 });
