@@ -1,6 +1,10 @@
 const express = require("express");
 const db = require("./db");
 const app = express();
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+app.use(express.json());
 
 app.get("/api/project",async(request, response)=>{
     const  result =await db.query("SELECT * FROM users")
@@ -8,51 +12,66 @@ app.get("/api/project",async(request, response)=>{
 
 });
 
-
-app.post("/api/project/register",async(request,response)=>{
-
+app.post("/api/project/register", async (request, response) => {
     const name = request.body.name;
     const email = request.body.email;
     const password = request.body.password;
-    const hashPassword = await bcrypt.hash(password, 10);
-  
+    
+    const passwordHash = await bcrypt.hash(password, 10); 
+    
+    try {
+        const [result] = await db.query( "INSERT INTO users(name, email, password) VALUES (? , ?, ?)",[name, email, passwordHash]);
 
-    db.query("INSERT INTO users(name, email , password) VALUES (? , ? , ?)",[name, email, hashPassword],(error, result)=>{
-        if(error) return response.status(500).json({message : "Server internal error"});
-        response.status(201).json({id: result.insertId,name : name, email : email});
-     } );
+        response.status(201).json({ 
+            id: result.insertId, 
+            name: name, 
+            email: email 
+        });
+
+    } catch (error) {
+        console.error("Database INSERT error:", error);
+        if (error.errno === 1062) {
+             return response.status(409).json({ message: "This email address is already registered." });
+        }
+        return response.status(500).json({ 
+            message: "Server internal error. Could not register user." 
+        });
+    }
 });
-
-
-app.post("/api/project/login", async (request,response)=>{
-
+// password hashing -register
+app.post("/api/project/login", async (request, response) => {
     const email = request.body.email;
     const password = request.body.password;
-   
+    const secretKey = "ghdfjjgi9ew8865w"; 
 
-    db.query("SELECT * FROM users WHERE email=?",[email],async(error, result)=>{
-        if(error) return response.status(500).json({message : "Server internal error"});
-        const dbPassword = result[0].password;
-          const name = result[0].name;
-          const email = result[0].email;
-        const isPasswordSame = await bcrypt.compare(password,dbPassword);
-        if(isPasswordSame){
-             const secretkey ="sddfgh56ds";
-            const token = jwt.sign({name:name, email:email}, secretkey,{expiresIn:"1h"} ); //token
-             response.status(200).json({message: "Login Success", token: token})
+    try {
+        const [result] = await db.query("SELECT name, email, password FROM users WHERE email=?", [email],);
+        if (result.length === 0) {
+            return response.status(401).json({ message: "Login failed: Invalid email or password." });
         }
-        else{
 
-
-           response.status(200).json({message: "Login Failed"}) 
-        }
+        const user = result[0];
+        const dbPassword = user.password;
+        const isPasswordSame = await bcrypt.compare(password, dbPassword);
         
-     } );
+        if (isPasswordSame) {
+            const token = jwt.sign({ name: user.name, email: user.email }, secretKey, { expiresIn: "1h" }); 
+            
+            response.status(200).json({ 
+                message: "Login successfully", 
+                token: token
+            });
+        } else {
+            response.status(401).json({ message: "Login failed: Invalid email or password." });
+        }
 
-    })
-
-
-
+    } catch (error) {
+        console.error("Login attempt error:", error);
+        return response.status(500).json({ 
+            message: "An internal server error occurred during login."
+        });
+    }
+});
 
 app.listen(4004, (error)=>{
     if(error) console.log("Error "+ error);
